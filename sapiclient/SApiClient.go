@@ -3,7 +3,6 @@ package sapiclient
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/spf13/viper"
 	"net/url"
@@ -66,7 +65,6 @@ func New(cfgPath ...string) (c *sApiClient, err error) {
 		err = errors.New("配置文件读取失败: " + err.Error())
 		return
 	}
-	fmt.Println(viperObject.Get("server.Debug"))
 	appKey := viperObject.GetString("sapi.appKey")
 	appSecret := viperObject.GetString("sapi.appSecret")
 	serverUrl := viperObject.GetString("sapi.serverUrl")
