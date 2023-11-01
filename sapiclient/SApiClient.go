@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -75,6 +77,7 @@ func New(cfgPath ...string) (c *sApiClient, err error) {
 		appKey:        appKey,
 		appSecret:     appSecret,
 		sapiServerUrl: serverUrl,
+		clientOptions: &ClientOptions{},
 	}, nil
 }
 
@@ -104,30 +107,34 @@ func (c *sApiClient) DoRequest(body map[string]string) (responseData ResponseDat
 		c.sapiServerUrl = urlParse.Scheme + "://" + c.sapiServerIp + urlParse.Path
 	}
 
-	path := "sapi/" + c.service + string(os.PathSeparator) + c.method
-	urlReq := c.sapiServerUrl + path
+	pathUrl := "sapi/" + c.service + "/" + c.method
+	c.sapiServerUrl = strings.TrimRight(c.sapiServerUrl, "/") + "/"
+	urlReq := c.sapiServerUrl + pathUrl
 	headers := map[string]string{
 		"Accept":      "text/plain;charset=utf-8",
 		"Content-Typ": "application/x-www-form-urlencoded",
 		"charset":     "utf-8",
 	}
 	headerOptions := make(map[string]string, 0)
-	headerOptions = c.clientOptions.Headers
+	if c.clientOptions.Headers != nil {
+		headerOptions = c.clientOptions.Headers
+	}
 	headerOptions["client-version"] = VERSION_CLIENT
 	if c.clientOptions.Timeout == 0 {
-		headerOptions["time"] = time.Now().String()
+		headerOptions["time"] = strconv.Itoa(int(time.Now().Unix()))
 	}
 	if c.clientOptions.Nonce == "" {
 		headerOptions["nonce"] = Alnum()
 	}
 	headerOptions["appkey"] = c.appKey
-	headerOptions["sign"] = SEncryptSign(c.appKey, c.appSecret, path, headerOptions["nonce"], headerOptions["time"])
+	headerOptions["sign"] = SEncryptSign(c.appKey, c.appSecret, pathUrl, headerOptions["nonce"], headerOptions["time"])
 	for key, val := range headerOptions {
 		headers[key] = val
 	}
 	client := resty.New()
 	res, err := client.R().SetHeaders(headers).SetFormData(body).Post(urlReq)
 	if err != nil {
+		err = errors.New(err.Error())
 		return
 	}
 	if res.IsError() {
