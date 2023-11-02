@@ -1,4 +1,4 @@
-module github.com/zhenhua1/go-sapiclient
+module github.com/zhenhua1/sapiclient
 
 go 1.20
 
