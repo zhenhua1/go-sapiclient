@@ -17,7 +17,6 @@ import (
 //	@param time
 //	@return string
 func SEncryptSign(appKey, appSecret, path, nonce, time string) string {
-
 	sign := strings.ToUpper(Md5Encrypt(Md5Encrypt(appKey+strings.ToLower(path)+nonce+time) + appSecret))
 	return sign
 }
@@ -31,6 +30,6 @@ func SEncryptSign(appKey, appSecret, path, nonce, time string) string {
 func Md5Encrypt(data string) string {
 	gmd5H := md5.New()
 	gmd5H.Write([]byte(data))
-	md5 := fmt.Sprintf("%x", gmd5H.Sum(nil))
-	return md5
+	md5Val := fmt.Sprintf("%x", gmd5H.Sum(nil))
+	return md5Val
 }
