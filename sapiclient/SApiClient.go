@@ -146,6 +146,7 @@ func (c *sApiClient) DoRequest(body map[string]interface{}) (responseData *Respo
 	for key, val := range headerOptions {
 		headers[key] = val
 	}
+	c.ClientOptions.Headers = headers
 	client := resty.New()
 	if c.ClientOptions.Timeout != 0 {
 		client = client.SetTimeout(time.Duration(c.ClientOptions.Timeout) * time.Second)
