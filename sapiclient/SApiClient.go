@@ -67,9 +67,16 @@ func New(cfgPath ...string) (c *sApiClient, err error) {
 		err = errors.New("配置文件读取失败: " + err.Error())
 		return
 	}
-	appKey := viperObject.GetString("sapi.appKey")
-	appSecret := viperObject.GetString("sapi.appSecret")
-	serverUrl := viperObject.GetString("sapi.serverUrl")
+	appKey, appSecret, serverUrl := "", "", ""
+	if viperObject.IsSet("sapi.appKey") {
+		appKey = viperObject.GetString("sapi.appKey")
+	}
+	if viperObject.IsSet("sapi.appSecret") {
+		appSecret = viperObject.GetString("sapi.appSecret")
+	}
+	if viperObject.IsSet("sapi.serverUrl") {
+		serverUrl = viperObject.GetString("sapi.serverUrl")
+	}
 	if serverUrl == "" {
 		serverUrl = S_API_URL
 	}
@@ -146,6 +153,21 @@ func (c *sApiClient) DoRequest(body map[string]string) (responseData ResponseDat
 	return
 }
 
+// SetClientCfg
+//
+//	@Description: 设置客户端key、secret、domain
+//	@receiver c
+//	@Author zzh 2023-11-03 12:10:21
+//	@param appKey
+//	@param appSecret
+//	@param serverUrl
+func (c *sApiClient) SetClientCfg(appKey, appSecret, serverUrl string) *sApiClient {
+	c.appKey = appKey
+	c.appSecret = appSecret
+	c.sapiServerUrl = serverUrl
+	return c
+}
+
 // SetClientOptions
 //
 //	@Description: 设置客户端配置参数
@@ -153,7 +175,9 @@ func (c *sApiClient) DoRequest(body map[string]string) (responseData ResponseDat
 //	@Author zzh 2023-10-31 17:25:10
 //	@param options
 func (c *sApiClient) SetClientOptions(options *ClientOptions) *sApiClient {
-	c.clientOptions = options
+	if options != nil {
+		c.clientOptions = options
+	}
 	return c
 }
 
@@ -164,7 +188,9 @@ func (c *sApiClient) SetClientOptions(options *ClientOptions) *sApiClient {
 //	@Author zzh 2023-10-31 17:24:47
 //	@param headers
 func (c *sApiClient) SetClientHeaders(headers map[string]string) *sApiClient {
-	c.clientOptions.Headers = headers
+	if headers != nil {
+		c.clientOptions.Headers = headers
+	}
 	return c
 }
 
