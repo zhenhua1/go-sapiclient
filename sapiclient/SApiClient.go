@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/go-resty/resty/v2"
 	"github.com/spf13/viper"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -23,13 +24,16 @@ const (
 )
 
 type sApiClient struct {
-	appKey        string
-	appSecret     string
-	sapiServerUrl string //服务器地址
-	sapiServerIp  string //指定服务ip
-	service       string //指定服务
-	method        string //指定服务方法
-	clientOptions *ClientOptions
+	appKey            string
+	appSecret         string
+	sapiServerUrl     string      //服务器地址
+	sapiServerIp      string      //指定服务ip
+	service           string      //指定服务
+	method            string      //指定服务方法
+	RawResponseHeader http.Header //响应头
+	RawResponseParams string      //响应参数
+	RawStatusCode     int         //响应状态码
+	ClientOptions     *ClientOptions
 }
 
 // ClientOptions
@@ -90,7 +94,7 @@ func New(cfgPath ...string) (c *sApiClient, err error) {
 		appKey:        appKey,
 		appSecret:     appSecret,
 		sapiServerUrl: serverUrl,
-		clientOptions: &ClientOptions{},
+		ClientOptions: &ClientOptions{},
 	}, nil
 }
 
@@ -129,12 +133,12 @@ func (c *sApiClient) DoRequest(body map[string]interface{}) (responseData *Respo
 		"charset":     "utf-8",
 	}
 	headerOptions := make(map[string]string, 0)
-	if c.clientOptions.Headers != nil {
-		headerOptions = c.clientOptions.Headers
+	if c.ClientOptions.Headers != nil {
+		headerOptions = c.ClientOptions.Headers
 	}
 	headerOptions["client-version"] = VERSION_CLIENT
 	headerOptions["time"] = strconv.Itoa(int(time.Now().Unix()))
-	if c.clientOptions.Nonce == "" {
+	if c.ClientOptions.Nonce == "" {
 		headerOptions["nonce"] = Alnum()
 	}
 	headerOptions["appkey"] = c.appKey
@@ -143,13 +147,13 @@ func (c *sApiClient) DoRequest(body map[string]interface{}) (responseData *Respo
 		headers[key] = val
 	}
 	client := resty.New()
-	if c.clientOptions.Timeout != 0 {
-		client = client.SetTimeout(time.Duration(c.clientOptions.Timeout) * time.Second)
+	if c.ClientOptions.Timeout != 0 {
+		client = client.SetTimeout(time.Duration(c.ClientOptions.Timeout) * time.Second)
 	}
-	if c.clientOptions.RetryCount != 0 {
-		client = client.SetRetryCount(c.clientOptions.RetryCount)
-		if c.clientOptions.RetryCount != 0 {
-			client = client.SetRetryWaitTime(time.Duration(c.clientOptions.RetryCount))
+	if c.ClientOptions.RetryCount != 0 {
+		client = client.SetRetryCount(c.ClientOptions.RetryCount)
+		if c.ClientOptions.RetryCount != 0 {
+			client = client.SetRetryWaitTime(time.Duration(c.ClientOptions.RetryCount))
 		} else {
 			client = client.SetRetryWaitTime(1 * time.Second)
 		}
@@ -164,6 +168,9 @@ func (c *sApiClient) DoRequest(body map[string]interface{}) (responseData *Respo
 		err = errors.New(string(jsonErr))
 		return
 	}
+	c.RawResponseHeader = res.RawResponse.Header
+	c.RawResponseParams = res.String()
+	c.RawStatusCode = res.StatusCode()
 	err = json.Unmarshal(res.Body(), &responseData)
 	return
 }
@@ -191,10 +198,10 @@ func (c *sApiClient) SetClientCfg(appKey, appSecret, serverUrl string) *sApiClie
 //	@param options
 func (c *sApiClient) SetClientOptions(options *ClientOptions) *sApiClient {
 	if options != nil {
-		if c.clientOptions.Timeout != 0 {
-			options.Timeout = c.clientOptions.Timeout
+		if c.ClientOptions.Timeout != 0 {
+			options.Timeout = c.ClientOptions.Timeout
 		}
-		c.clientOptions = options
+		c.ClientOptions = options
 	}
 	return c
 }
@@ -207,7 +214,7 @@ func (c *sApiClient) SetClientOptions(options *ClientOptions) *sApiClient {
 //	@param headers
 func (c *sApiClient) SetClientHeaders(headers map[string]string) *sApiClient {
 	if headers != nil {
-		c.clientOptions.Headers = headers
+		c.ClientOptions.Headers = headers
 	}
 	return c
 }
@@ -253,6 +260,6 @@ func (c *sApiClient) SetMethod(method string) *sApiClient {
 //	@param timeOut
 //	@return *sApiClient
 func (c *sApiClient) SetTimeOut(timeOut int) *sApiClient {
-	c.clientOptions.Timeout = timeOut
+	c.ClientOptions.Timeout = timeOut
 	return c
 }

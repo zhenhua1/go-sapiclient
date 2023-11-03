@@ -14,7 +14,7 @@ func main() {
 	data := make(map[string]interface{})
 	data["mobile"] = "18795487568"
 	data["plat_identify"] = "inquiry"
-	res, err := c.SetClientCfg("***", "CA5E95571*********ACDFFFBA2", "http://fa-serve.com").
+	res, err := c.SetClientCfg("DIP", "CA5E9557164EB7E8CA74761ACDFFFBA2", "http://fa-serve.com").
 		SetTimeOut(300).
 		SetClientOptions(&sapiclient.ClientOptions{
 			RetryCount:    1,
@@ -25,5 +25,7 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
+	fmt.Println(c.RawResponseHeader)
+	fmt.Println(c.RawResponseParams)
 	fmt.Println(res)
 }
