@@ -19,7 +19,7 @@ func main() {
 		SetClientOptions(&sapiclient.ClientOptions{
 			RetryCount:    1,
 			RetryWaitTime: 1,
-		}).
+		}).SetRequestMethod("get").
 		SetService("register").SetMethod("registerUser").DoRequest(data)
 	if err != nil {
 		fmt.Println(err.Error())

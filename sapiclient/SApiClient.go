@@ -3,6 +3,7 @@ package sapiclient
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/spf13/viper"
 	"net/http"
@@ -28,6 +29,7 @@ type sApiClient struct {
 	appSecret         string
 	sapiServerUrl     string      //服务器地址
 	sapiServerIp      string      //指定服务ip
+	requestMethod     string      //指定请求方法 http的情况下默认是post请求
 	service           string      //指定服务
 	method            string      //指定服务方法
 	RawResponseHeader http.Header //响应头
@@ -159,7 +161,17 @@ func (c *sApiClient) DoRequest(body map[string]interface{}) (responseData *Respo
 			client = client.SetRetryWaitTime(1 * time.Second)
 		}
 	}
-	res, err := client.R().SetHeaders(headers).SetBody(body).Post(urlReq)
+	clientReq := client.R().SetHeaders(headers)
+	res := &resty.Response{}
+	//目前只支持get和post请求并且get的参数在url中post的参数在body中
+	if c.requestMethod != "" && strings.ToLower(c.requestMethod) == "get" {
+		for k, v := range body {
+			clientReq.SetQueryParam(k, fmt.Sprintf("%v", v))
+		}
+		res, err = clientReq.Get(urlReq)
+	} else {
+		res, err = clientReq.SetBody(body).Post(urlReq)
+	}
 	if err != nil {
 		err = errors.New(err.Error())
 		return
@@ -228,6 +240,22 @@ func (c *sApiClient) SetClientHeaders(headers map[string]string) *sApiClient {
 //	@param sapiServerIp
 func (c *sApiClient) SetSapiServerIp(sapiServerIp string) *sApiClient {
 	c.sapiServerIp = sapiServerIp
+	return c
+}
+
+// SetRequestMethod
+//
+//	@Description: 指定HTTP请求方法
+//	@receiver c
+//	@Author zzh 2023-12-06 15:50:21
+//	@param requestMethod
+//	@return *sApiClient
+func (c *sApiClient) SetRequestMethod(requestMethod string) *sApiClient {
+	if requestMethod == "" {
+		c.requestMethod = "POST"
+	} else {
+		c.requestMethod = requestMethod
+	}
 	return c
 }
 
